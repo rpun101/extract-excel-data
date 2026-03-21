@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
 import re
-from datetime import datetime
+from datetime import datetime, date
 from io import BytesIO
+from html import escape as html_escape
 
 st.set_page_config(page_title="Extract Excel Data", layout="wide")
 st.title("Extract Excel Data")
@@ -27,6 +28,16 @@ extra_cols_input = st.text_input(
     "Additional columns to extract — optional (comma-separated). Date columns are included automatically.",
     placeholder="e.g. Total, Field",
 )
+
+# ──────────────────────────────────────────────
+# 4) Date range filter
+# ──────────────────────────────────────────────
+st.write("**Date range filter** (leave blank to include all dates)")
+date_col1, date_col2 = st.columns(2)
+with date_col1:
+    start_date = st.date_input("Start date", value=None, format="MM/DD/YYYY")
+with date_col2:
+    end_date = st.date_input("End date", value=None, format="MM/DD/YYYY")
 
 # ──────────────────────────────────────────────
 # Extract button
@@ -81,6 +92,16 @@ def _cell_str(val) -> str:
             return str(val)
     s = str(val).strip()
     return "" if s.lower() in ("nan", "nat") else s
+
+
+def _parse_date_from_header(header_str: str):
+    """Try to parse a date column header string into a date object."""
+    for fmt in ("%m/%d/%Y", "%m/%d/%y", "%m-%d-%Y", "%m-%d-%y", "%Y-%m-%d", "%Y/%m/%d"):
+        try:
+            return datetime.strptime(header_str, fmt).date()
+        except (ValueError, TypeError):
+            continue
+    return None
 
 
 def _normalise(text: str) -> str:
@@ -235,34 +256,76 @@ if extract_clicked:
 
     if final_results:
         result_df = pd.DataFrame(final_results)
-        st.dataframe(result_df, use_container_width=True, hide_index=True)
 
-        # Copy to clipboard (tab-separated for pasting into Excel/Sheets)
-        tsv = result_df.to_csv(sep="\t", index=False)
-        st.code(tsv, language=None)
-        st.caption("Select the text above and copy, or use the buttons below.")
+        # Drop date columns where every row is empty
+        cols_to_drop = []
+        for col in result_df.columns:
+            if col == "Row Label":
+                continue
+            if result_df[col].fillna("").astype(str).str.strip().eq("").all():
+                cols_to_drop.append(col)
+        if cols_to_drop:
+            result_df = result_df.drop(columns=cols_to_drop)
 
-        col1, col2 = st.columns(2)
-        with col1:
-            # Download as Excel
-            output = BytesIO()
-            result_df.to_excel(output, index=False, engine="openpyxl")
-            output.seek(0)
-            st.download_button(
-                label="Download as Excel",
-                data=output,
-                file_name="extracted_data.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
-        with col2:
-            # Download as CSV
-            csv_data = result_df.to_csv(index=False)
-            st.download_button(
-                label="Download as CSV",
-                data=csv_data,
-                file_name="extracted_data.csv",
-                mime="text/csv",
-            )
+        # Apply date range filter — keep only date columns within range
+        if start_date or end_date:
+            cols_to_keep = ["Row Label"]
+            for col in result_df.columns:
+                if col == "Row Label":
+                    continue
+                parsed = _parse_date_from_header(col)
+                if parsed is None:
+                    # Non-date column (e.g. Total) — always keep
+                    cols_to_keep.append(col)
+                else:
+                    if start_date and parsed < start_date:
+                        continue
+                    if end_date and parsed > end_date:
+                        continue
+                    cols_to_keep.append(col)
+            result_df = result_df[[c for c in cols_to_keep if c in result_df.columns]]
+
+        # Ensure all column names are plain strings (prevents Excel ########)
+        result_df.columns = [str(c) for c in result_df.columns]
+
+        # Calculate height to show all rows (35px per row + 38px header + some padding)
+        table_height = min(38 + len(result_df) * 35 + 20, 2000)
+
+        st.dataframe(
+            result_df,
+            use_container_width=True,
+            hide_index=True,
+            height=table_height,
+        )
+
+        # Copy to clipboard button (tab-separated for pasting into Excel/Sheets)
+        # Prefix date headers with a single-quote so Excel treats them as text
+        copy_df = result_df.copy()
+        copy_df.columns = [
+            f"'{c}" if _parse_date_from_header(c) else c
+            for c in copy_df.columns
+        ]
+        tsv = copy_df.to_csv(sep="\t", index=False)
+        tsv_escaped = html_escape(tsv)
+        copy_icon = "\U0001F4CB"
+        st.components.v1.html(
+            f"""
+            <textarea id="tsv-data" style="position:absolute;left:-9999px">{tsv_escaped}</textarea>
+            <button id="copy-btn" onclick="
+                var t=document.getElementById('tsv-data');
+                t.style.position='static';
+                t.select();
+                document.execCommand('copy');
+                t.style.position='absolute';
+                this.textContent='Copied!';
+                setTimeout(function(){{ document.getElementById('copy-btn').textContent='{copy_icon} Copy Data'; }},1500);
+            " style="padding:0.4em 1.2em;border-radius:6px;border:1px solid #ccc;
+                     background:#f0f2f6;cursor:pointer;font-size:14px;margin-top:-8px">
+                {copy_icon} Copy Data
+            </button>
+            """,
+            height=50,
+        )
     else:
         st.info("No matching rows found across any sheet.")
 

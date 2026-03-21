@@ -24,8 +24,5 @@ row labels, make the case insensitive.
 and give me button after columns to hit extract, then show the Results
 I will give you a sample sheet1
 
-that looks nice and functional
-+ I just need a copy button, you do not need to show whole what gonna be copied
-+ number in excel sheet should be two decimal. so 5 should be 5.00, 
-
-and optional. Make the textbox to row label be multiple line, meaning it should expand horizontally when more data is entered. optional make it rember last file that was used.
+EBT Cash, MOP Cash (Dollar)
+, Alternative Sweet Snacks,Automotive Products,Beer,Bottle Deposits/ CRV,Candy,Cigarettes,Dispensed Cold/ Frozen,Dispensed Hot,Edible Grocery,Fluid Milk,Food Service,Frozen Foods,General Merchandise,Health & Beauty,Ice,Ice Cream / Novelty,Liquor, Wine

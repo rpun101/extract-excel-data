@@ -8,6 +8,17 @@ from html import escape as html_escape
 st.set_page_config(page_title="Extract Excel Data", layout="wide")
 st.title("Extract Excel Data")
 
+# Auto-grow textarea with content
+st.markdown("""
+<style>
+div[data-testid="stTextArea"] textarea {
+    field-sizing: content;
+    min-height: 68px;
+    overflow-y: hidden;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ── Helpers ───────────────────────────────────
 
 DATE_PATTERNS = [
@@ -116,9 +127,10 @@ uploaded_file = st.file_uploader("Upload Excel Sheet", type=["xlsx", "xls"])
 # ──────────────────────────────────────────────
 # 2) Row labels (comma-separated)
 # ──────────────────────────────────────────────
-row_labels_input = st.text_input(
+row_labels_input = st.text_area(
     "Row labels to extract (comma-separated)",
     placeholder='e.g. Wine, MOP Cash (Dollar), EBT Cash, MOP Credit',
+    height=80,
 )
 
 # ──────────────────────────────────────────────
@@ -351,5 +363,14 @@ elif "extracted_df" in st.session_state and st.session_state["extracted_df"] is 
 # ── Errors / Warnings ──
 if st.session_state.get("extract_errors"):
     st.subheader("Errors / Warnings")
-    for err in st.session_state["extract_errors"]:
-        st.warning(err)
+    lines = "".join(
+        f'<div>&#x26a0;&nbsp;{html_escape(e)}</div>'
+        for e in st.session_state["extract_errors"]
+    )
+    st.markdown(
+        f'<div style="background:#1a1a1a;color:#e8e8e8;font-family:Consolas,monospace;'
+        f'font-size:13px;padding:12px 16px;border-radius:6px;'
+        f'border:1px solid #555;overflow-y:auto;max-height:300px;'
+        f'line-height:1.7;">{lines}</div>',
+        unsafe_allow_html=True,
+    )

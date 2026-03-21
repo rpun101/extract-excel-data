@@ -10,13 +10,28 @@ A Streamlit web app that extracts specific row data from Excel files across mult
 - **Optional extra columns** — specify additional column names to include
 - **Multi-sheet support** — scans every sheet; the same label can be at different row numbers in each sheet
 - **Merged-cell aware** — checks the first few columns for labels (handles merged/shifted cells)
-- **Error reporting** — shows which labels or columns were not found, per sheet
+- **Date range filter** — filter extracted columns by a start/end date
+- **Error reporting** — shows which labels or columns were not found, per sheet (terminal-style output)
+- **Copy to clipboard** — copy results as tab-separated values for pasting into Excel
 - **Download** — export results as an Excel file
+
+## TODO
+
+- [ ] **Multiple file upload** — upload and process more than one workbook at a time; results merged into a single table
+- [ ] **Column display order** — a text area with comma-separated column/label names to control which columns are shown first in the results (e.g. enter `Cash, Cash (EBT)` to pin those to the left)
 
 ## Requirements
 
 - Python 3.10+
 - Dependencies listed in `requirements.txt`
+
+### Libraries
+
+| Library | Purpose |
+|---|---|
+| [streamlit](https://streamlit.io/) | Web UI framework — renders the page, widgets, tables, and download buttons |
+| [pandas](https://pandas.pydata.org/) | Reads Excel workbooks, builds and filters the results `DataFrame` |
+| [openpyxl](https://openpyxl.readthedocs.io/) | Excel engine used by pandas to open `.xlsx` files and write the downloadable output |
 
 ## Setup
 

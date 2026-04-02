@@ -158,6 +158,7 @@ if extract_clicked:
         st.stop()
 
     row_labels = [lbl.strip() for lbl in row_labels_input.split(",") if lbl.strip()]
+    st.session_state["_row_labels_ordered"] = row_labels
     extra_cols = [c.strip() for c in extra_cols_input.split(",") if c.strip()] if extra_cols_input else []
 
     try:
@@ -267,16 +268,12 @@ if "extracted_df" in st.session_state and st.session_state["extracted_df"] is no
             start_date = st.date_input(
                 "Start date",
                 value=data_min,
-                min_value=data_min,
-                max_value=data_max,
                 format="MM/DD/YYYY",
             )
         with dcol2:
             end_date = st.date_input(
                 "End date",
                 value=data_max,
-                min_value=data_min,
-                max_value=data_max,
                 format="MM/DD/YYYY",
             )
 
@@ -304,20 +301,31 @@ if "extracted_df" in st.session_state and st.session_state["extracted_df"] is no
     non_date_cols = [c for c in result_df.columns if c != "Row Label" and _parse_date_from_header(c) is None]
     result_df = result_df[["Row Label"] + date_col_order + non_date_cols]
 
+    # ── Order result rows by the input order ──
+    row_labels_ordered = st.session_state.get("_row_labels_ordered", [])
+    label_to_row = {str(row["Row Label"]): row for _, row in result_df.iterrows()}
+    ordered_rows = [label_to_row[lbl] for lbl in row_labels_ordered if lbl in label_to_row]
+    # append any rows not in the ordered list at the end
+    ordered_set = {lbl for lbl in row_labels_ordered if lbl in label_to_row}
+    leftover = [row for _, row in result_df.iterrows() if str(row["Row Label"]) not in ordered_set]
+    all_rows = ordered_rows + leftover
+    display_df = pd.DataFrame(all_rows)
+    display_df.columns = [str(c) for c in display_df.columns]
+
     st.subheader("Results")
 
     # Calculate height to show all rows
-    table_height = min(38 + len(result_df) * 35 + 20, 2000)
+    table_height = min(38 + len(display_df) * 35 + 20, 2000)
 
     st.dataframe(
-        result_df,
+        display_df,
         use_container_width=True,
         hide_index=True,
         height=table_height,
     )
 
     # ── Action buttons: Copy + Download Excel ──
-    copy_df = result_df.copy()
+    copy_df = display_df.copy()
     copy_df.columns = [
         f"'{c}" if _parse_date_from_header(c) else c
         for c in copy_df.columns
@@ -348,7 +356,7 @@ if "extracted_df" in st.session_state and st.session_state["extracted_df"] is no
         )
     with btn_col2:
         output = BytesIO()
-        result_df.to_excel(output, index=False, engine="openpyxl")
+        display_df.to_excel(output, index=False, engine="openpyxl")
         output.seek(0)
         st.download_button(
             label="Download as Excel",

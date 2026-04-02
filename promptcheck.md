@@ -24,5 +24,7 @@ row labels, make the case insensitive.
 and give me button after columns to hit extract, then show the Results
 I will give you a sample sheet1
 
-EBT Cash, MOP Cash (Dollar)
-, Alternative Sweet Snacks,Automotive Products,Beer,Bottle Deposits/ CRV,Candy,Cigarettes,Dispensed Cold/ Frozen,Dispensed Hot,Edible Grocery,Fluid Milk,Food Service,Frozen Foods,General Merchandise,Health & Beauty,Ice,Ice Cream / Novelty,Liquor, Wine
+
+##ORDER##
+ Fuel Settlement Total, MOP Cash (Dollar), MOP Debit, MOP Credit, EBT Cash, MOP EBT Tot, 
+ Cigarettes, Other Tobacco, Beer, Wine, Liquor, Packaged Beverages, Candy, Fluid Milk, Other Dairy/Deli, Packaged Sandwich, Ice Cream / Novelty, Frozen Foods, Packaged Breads, Salty Snacks, Packaged Sweet Snacks, Alternative Sweet Snacks, Perishable Grocery, Edible Grocery, Non-Edible Grocery, Health & Beauty, General Merchandise, Automotive Products, Scratch Lottery Sales, Ice, Food Service, Dispensed Hot,  Dispensed Cold/ Frozen, Bottle Deposits/ CRV, Lotto Online Sales, MOP Scratch, MOP Lotto, MOP MFG Coupons
